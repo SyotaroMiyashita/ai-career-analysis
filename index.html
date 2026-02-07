@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FAF8F5">
+  <meta name="description" content="IT・コンサル領域でのキャリア診断。30秒であなたの市場価値をチェック。">
+
+  <title>AI Career Analysis | IT・コンサル転職</title>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --text-primary: #2C2825;
+      --text-secondary: #6B635B;
+      --text-tertiary: #9A938B;
+      --accent-orange: #E05A2B;
+      --accent-gold: #C9A87C;
+      --border-color: #E8E4DF;
+      --space-xs: 8px;
+      --space-sm: 16px;
+      --space-md: 24px;
+      --space-lg: 32px;
+      --space-xl: 48px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition-fast: 0.2s ease;
+      --transition-normal: 0.3s ease;
+      --font-serif: 'Noto Serif JP', serif;
+      --font-sans: 'Noto Sans JP', 'Inter', sans-serif;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: var(--space-md);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      transition: opacity var(--transition-normal);
+    }
+
+    .screen.hidden {
+      display: none;
+    }
+
+    .logo {
+      text-align: center;
+      padding: var(--space-lg) 0;
+    }
+
+    .logo-text {
+      font-family: var(--font-serif);
+      font-size: 1.125rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      color: var(--text-primary);
+    }
+
+    .progress-container {
+      margin-bottom: var(--space-xl);
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xs);
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background-color: var(--border-color);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--accent-gold);
+      border-radius: 2px;
+      transition: width var(--transition-normal);
+    }
+
+    .question-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .question-card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-md);
+      box-shadow: 0 2px 8px rgba(44, 40, 37, 0.04);
+    }
+
+    .question-text {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+      line-height: 1.7;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .question-subtext {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: var(--space-xs);
+    }
+
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .option-button {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+      text-align: left;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      animation: fadeInUp 0.3s ease forwards;
+      opacity: 0;
+    }
+
+    .option-button:nth-child(1) { animation-delay: 0.1s; }
+    .option-button:nth-child(2) { animation-delay: 0.15s; }
+    .option-button:nth-child(3) { animation-delay: 0.2s; }
+    .option-button:nth-child(4) { animation-delay: 0.25s; }
+    .option-button:nth-child(5) { animation-delay: 0.3s; }
+    .option-button:nth-child(6) { animation-delay: 0.35s; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .option-button:hover {
+      border-color: var(--accent-gold);
+      background-color: rgba(201, 168, 124, 0.08);
+    }
+
+    .option-button.selected {
+      border-color: var(--accent-gold);
+      background-color: rgba(201, 168, 124, 0.12);
+    }
+
+    .option-button.primary {
+      background-color: var(--accent-orange);
+      border-color: var(--accent-orange);
+      color: #FFFFFF;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .option-button.primary:hover {
+      background-color: #c94e24;
+    }
+
+    .micro-copy {
+      text-align: center;
+      padding: var(--space-md);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+
+    .micro-copy.visible {
+      opacity: 1;
+    }
+
+    /* ============================================
+       RESULT SCREEN - REDESIGNED
+       ============================================ */
+    .result-screen {
+      text-align: center;
+    }
+
+    .result-header {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-sm);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Main Result Card */
+    .result-card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-md);
+      box-shadow: 0 2px 12px rgba(44, 40, 37, 0.06);
+    }
+
+    .result-type {
+      font-family: var(--font-serif);
+      font-size: 1.625rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+      margin-bottom: var(--space-xs);
+    }
+
+    .result-tagline {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: var(--space-md);
+    }
+
+    .result-divider {
+      width: 48px;
+      height: 2px;
+      background-color: var(--accent-gold);
+      margin: 0 auto var(--space-md);
+    }
+
+    /* Market Position Badge */
+    .market-position {
+      display: inline-block;
+      background-color: rgba(201, 168, 124, 0.15);
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: var(--space-md);
+    }
+
+    .result-description {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      text-align: left;
+      margin-bottom: var(--space-md);
+    }
+
+    /* Strength Tags */
+    .strength-tags {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+
+    .strength-tag {
+      background-color: var(--bg-primary);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Next Step Section */
+    .next-step-section {
+      background-color: var(--bg-primary);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm);
+      margin-bottom: var(--space-md);
+      text-align: left;
+    }
+
+    .next-step-label {
+      font-size: 0.6875rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+
+    .next-step-text {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Benefits Section */
+    .benefits-section {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 6px 0;
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+    }
+
+    .benefit-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--accent-gold);
+      flex-shrink: 0;
+    }
+
+    /* CTA Button */
+    .cta-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background-color: var(--accent-orange);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: #FFFFFF;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color var(--transition-fast);
+    }
+
+    .cta-button:hover {
+      background-color: #c94e24;
+    }
+
+    .cta-button .line-icon {
+      width: 20px;
+      height: 20px;
+      fill: #FFFFFF;
+    }
+
+    .cta-note {
+      font-size: 0.6875rem;
+      color: var(--text-tertiary);
+      margin-top: var(--space-xs);
+    }
+
+    .trust-badge {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      padding: var(--space-lg) 0 var(--space-md);
+      margin-top: auto;
+    }
+
+    .app-footer p {
+      font-size: 0.6875rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+    }
+
+    /* Utility */
+    .text-center { text-align: center; }
+
+    @media (max-width: 480px) {
+      .app-container { padding: var(--space-sm); }
+      .question-card { padding: var(--space-md); }
+      .question-text { font-size: 1.125rem; }
+      .result-type { font-size: 1.375rem; }
+      .result-card { padding: var(--space-md); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header class="logo">
+      <span class="logo-text">AI Career Analysis</span>
+    </header>
+
+    <!-- Question Screen -->
+    <div id="question-screen" class="screen">
+      <div class="progress-container">
+        <div class="progress-info">
+          <span class="progress-text" id="progress-text">1 / 5</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="question-container">
+        <div class="question-card">
+          <p class="question-text" id="question-text"></p>
+          <p class="question-subtext" id="question-subtext"></p>
+        </div>
+        <div class="options-container" id="options-container"></div>
+        <p class="micro-copy" id="micro-copy"></p>
+      </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen hidden result-screen">
+      <p class="result-header">診断結果</p>
+
+      <div class="result-card">
+        <h2 class="result-type" id="result-type"></h2>
+        <p class="result-tagline" id="result-tagline"></p>
+        <div class="result-divider"></div>
+        <div class="market-position" id="market-position"></div>
+        <p class="result-description" id="result-description"></p>
+        <div class="strength-tags" id="strength-tags"></div>
+      </div>
+
+      <div class="next-step-section">
+        <p class="next-step-label">Next Step</p>
+        <p class="next-step-text" id="next-step-text"></p>
+      </div>
+
+      <div class="benefits-section">
+        <div class="benefit-item">
+          <svg class="benefit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>300社から厳選した、あなた専用の求人</span>
+        </div>
+        <div class="benefit-item">
+          <svg class="benefit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          <span>初年度年収100万円UP確約 ── 自信があるから、約束します</span>
+        </div>
+      </div>
+
+      <p class="trust-badge text-center">年間相談実績 1,500名超</p>
+
+      <button class="cta-button" id="line-button">
+        <svg class="line-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+        </svg>
+        LINEで求人を受け取る
+      </button>
+      <p class="cta-note text-center">※ 登録無料・1分で完了</p>
+    </div>
+
+    <footer class="app-footer">
+      <p>xHuman AI Inc.</p>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================
+    // SUPABASE CONFIGURATION
+    // ============================================
+    // TODO: 以下の値をSupabaseダッシュボードから取得して設定
+    const SUPABASE_URL = 'https://llgjjmoepjomjsjqhrij.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsZ2pqbW9lcGpvbWpzanFocmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQ5NjUsImV4cCI6MjA4NTk1MDk2NX0.hDSDVwysxjp3lvLbyV6rzGZhU-divNoFBTh16JCrHr8';
+
+    // Supabase初期化
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // セッションID（UUIDv4生成）
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    let sessionId = null;
+    let lastQuestionId = 'q1';
+
+    // UTMパラメータ取得
+    function getUTMParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        utm_source: params.get('utm_source') || null,
+        utm_medium: params.get('utm_medium') || null,
+        utm_campaign: params.get('utm_campaign') || null
+      };
+    }
+
+    // デバイス情報取得
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      let device = 'desktop';
+      if (/iPhone|iPad|iPod/i.test(ua)) device = 'ios';
+      else if (/Android/i.test(ua)) device = 'android';
+      else if (/Mobile/i.test(ua)) device = 'mobile';
+      return { device, user_agent: ua.substring(0, 500) };
+    }
+
+    // Supabaseにデータ保存
+    async function saveToSupabase(data) {
+      if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+        console.log('[Supabase] 未設定のためスキップ:', data);
+        return;
+      }
+      try {
+        const { error } = await supabaseClient
+          .from('chatbot_responses')
+          .upsert({ id: sessionId, ...data });
+        if (error) {
+          console.error('[Supabase] Error:', error);
+        } else {
+          console.log('[Supabase] Saved:', data);
+        }
+      } catch (e) {
+        console.error('[Supabase] Failed:', e);
+      }
+    }
+
+    // セッション開始（Q1クリック時）
+    async function startSession() {
+      sessionId = generateUUID();
+      const utmParams = getUTMParams();
+      const deviceInfo = getDeviceInfo();
+
+      await saveToSupabase({
+        ...utmParams,
+        ...deviceInfo,
+        last_question: 'q1'
+      });
+    }
+
+    // 離脱時に最終状態を保存
+    window.addEventListener('beforeunload', function() {
+      if (sessionId && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        const data = JSON.stringify({ id: sessionId, last_question: lastQuestionId });
+        navigator.sendBeacon(
+          `${SUPABASE_URL}/rest/v1/chatbot_responses?on_conflict=id`,
+          new Blob([data], { type: 'application/json' })
+        );
+      }
+    });
+
+    // ============================================
+    // SCENARIO DEFINITION (Updated)
+    // ============================================
+    const SCENARIO = {
+      q1: {
+        id: 'q1',
+        type: 'entry',
+        question: 'あなたのIT市場価値、<br>30秒で可視化します。',
+        subtext: '※登録不要・完全無料',
+        options: [{ value: 'start', label: '30秒で診断する', primary: true }],
+        next: 'q2',
+        microCopy: null
+      },
+      q2: {
+        id: 'q2',
+        type: 'position',
+        question: '現在のポジションは？',
+        options: [
+          { value: 'it_engineer', label: 'ITエンジニア' },
+          { value: 'it_consultant', label: 'ITコンサル/PMO' },
+          { value: 'strategy_consultant', label: '戦略・業務コンサル' },
+          { value: 'sales', label: 'セールス/プリセールス' },
+          { value: 'corporate', label: 'コーポレート/その他' },
+          { value: 'other_industry', label: '異業種（IT・コンサルに興味あり）' }
+        ],
+        next: (answer) => answer === 'other_industry' ? 'q3_alt' : 'q3',
+        microCopy: null
+      },
+      q3: {
+        id: 'q3',
+        type: 'career_phase',
+        question: 'キャリアのフェーズは？',
+        options: [
+          { value: 'junior', label: '1〜2年目（日々キャッチアップ中）' },
+          { value: 'mid', label: '3〜5年目（一人で回せるようになってきた）' },
+          { value: 'senior', label: '6年目以上（次のキャリアを考え始めた）' }
+        ],
+        next: 'q4',
+        microCopy: null
+      },
+      q3_alt: {
+        id: 'q3_alt',
+        type: 'industry',
+        question: '今の業界は？',
+        options: [
+          { value: 'finance', label: '金融・保険' },
+          { value: 'manufacturer', label: 'メーカー・製造' },
+          { value: 'trading', label: '商社・物流' },
+          { value: 'healthcare', label: '医療・ヘルスケア' },
+          { value: 'retail', label: '小売・流通・サービス' },
+          { value: 'infra', label: 'インフラ・不動産・建設' },
+          { value: 'government', label: '公務員・官公庁' },
+          { value: 'other', label: 'その他' }
+        ],
+        next: 'q4',
+        microCopy: null
+      },
+      q4: {
+        id: 'q4',
+        type: 'concern',
+        question: '今、一番キャリアで<br>気になっていることは？',
+        options: [
+          { value: 'salary', label: '年収・評価が見合っていない気がする' },
+          { value: 'upstream', label: 'もっと上流・大きい案件に関わりたい' },
+          { value: 'skill', label: '技術・専門性を伸ばせる環境がほしい' },
+          { value: 'culture', label: '組織や働き方にモヤモヤがある' },
+          { value: 'options', label: '将来の選択肢を広げておきたい' }
+        ],
+        next: 'q5',
+        microCopy: null
+      },
+      q5: {
+        id: 'q5',
+        type: 'urgency',
+        question: '転職の温度感、今どのあたり？',
+        options: [
+          { value: 'active', label: '具体的に動いている' },
+          { value: 'ready', label: 'いい話があれば動きたい' },
+          { value: 'planning', label: '半年くらいで考えたい' },
+          { value: 'research', label: 'まずは情報収集' }
+        ],
+        next: 'result',
+        microCopy: null
+      }
+    };
+
+    const QUESTION_ORDER = ['q1', 'q2', 'q3', 'q4', 'q5'];
+    const TOTAL_QUESTIONS = 5;
+
+    // ============================================
+    // DIAGNOSIS TYPES (Redesigned)
+    // ============================================
+    const DIAGNOSIS_TYPES = {
+      skill_value: {
+        name: 'アンダーバリュード',
+        tagline: '実力の割に、損してる',
+        marketPosition: '市場価値：過小評価の可能性',
+        description: '周りより技術力があるのに、なぜか年収は同じか低い──そんな経験ありませんか？あなたのスキルは、今の環境では正当に評価されていない可能性があります。同じスキルでも、企業によって年収に200万円以上の差がつくのがこの業界です。',
+        strengths: ['専門スキル', '実務経験', '即戦力'],
+        nextStep: 'まずは現在の市場価値を客観的に把握することが重要です。あなたのスキルセットの相場感をお伝えします。'
+      },
+      tech_depth: {
+        name: 'ディープダイバー',
+        tagline: '技術を極めたい。それが最大の武器になる',
+        marketPosition: '専門特化型：需要増加中',
+        description: '気になったら調べずにいられない──その探究心こそが、AI時代に最も価値を持つ資質です。深い専門性を持つエンジニアの市場価値は年々上昇しています。',
+        strengths: ['技術的深度', '問題解決力', '学習速度'],
+        nextStep: '専門性を軸に、技術顧問やアーキテクトなど上流ポジションへの展開も視野に入れるタイミングです。'
+      },
+      career_up: {
+        name: 'アップストリーマー',
+        tagline: '下流で手を動かすより、上流で絵を描きたい',
+        marketPosition: 'ポジションアップ適性：高',
+        description: 'もっと上流から関わりたい、大きな案件で全体を見たい──その意欲は、キャリアを加速させる重要なシグナルです。コンサルやプライムSIerでは、同じ経験年数でも関われる案件の規模がまったく違います。',
+        strengths: ['推進力', '視座の高さ', 'リーダーシップ'],
+        nextStep: '現在の経験を活かしつつ、より上流・大規模な案件に関われるポジションを探すタイミングです。'
+      },
+      environment: {
+        name: 'フィットシーカー',
+        tagline: '能力の問題じゃない。環境が合ってないだけ',
+        marketPosition: '環境変更による伸びしろ：大',
+        description: '「ここじゃない」という感覚がずっとある──それは正しい直感です。環境が合えば、あなたの実力は何倍にも発揮されます。',
+        strengths: ['自己理解', '環境適応力', '持続力'],
+        nextStep: 'カルチャーフィットを重視した企業選びで、長期的に活躍できる環境を見つけることが重要です。'
+      },
+      career_change: {
+        name: 'クロスオーバー',
+        tagline: '異業種の経験、それは武器になる',
+        marketPosition: '業界知見×IT：採用ニーズ増',
+        description: '「未経験だから無理かも」と思っていませんか？IT・コンサル業界では業界知見を持つ人材の需要が急増しています。あなたの「前職の当たり前」が、この業界では希少な専門性になります。',
+        strengths: ['業界知見', '多角的視点', 'チャレンジ精神'],
+        nextStep: '現職の業界知見を活かせるIT・コンサルポジションを探すことで、キャリアチェンジの成功率が上がります。'
+      },
+      growth: {
+        name: 'オプションメーカー',
+        tagline: '今すぐじゃない。でも、準備はしておきたい',
+        marketPosition: '情報収集フェーズ：準備OK',
+        description: '転職するかはわからない。でも、いざという時に動けないのは嫌だ──その姿勢こそが、キャリアを切り開く最大の武器です。選択肢を持つ人と持たない人では、5年後に大きな差がつきます。',
+        strengths: ['成長意欲', '柔軟性', '将来性'],
+        nextStep: '今のうちに選択肢を把握し、いざという時に動ける準備をしておくことが重要です。'
+      }
+    };
+
+    function getDiagnosisType(answers) {
+      const { position, concern } = answers;
+
+      // 異業種は全てクロスオーバー
+      if (position === 'other_industry') {
+        return DIAGNOSIS_TYPES.career_change;
+      }
+
+      // ITエンジニア - 技術職なので全パターン自然
+      if (position === 'it_engineer') {
+        if (concern === 'salary') return DIAGNOSIS_TYPES.skill_value;
+        if (concern === 'skill') return DIAGNOSIS_TYPES.tech_depth;
+        if (concern === 'upstream') return DIAGNOSIS_TYPES.career_up;
+        if (concern === 'culture') return DIAGNOSIS_TYPES.environment;
+        if (concern === 'options') return DIAGNOSIS_TYPES.growth;
+      }
+
+      // ITコンサル / PMO - 技術寄りなのでディープダイバーもあり
+      if (position === 'it_consultant') {
+        if (concern === 'upstream') return DIAGNOSIS_TYPES.career_up;
+        if (concern === 'salary') return DIAGNOSIS_TYPES.skill_value;
+        if (concern === 'skill') return DIAGNOSIS_TYPES.tech_depth;
+        if (concern === 'culture') return DIAGNOSIS_TYPES.environment;
+        if (concern === 'options') return DIAGNOSIS_TYPES.growth;
+      }
+
+      // 戦略・業務コンサル - 技術より戦略/業務の専門性
+      if (position === 'strategy_consultant') {
+        if (concern === 'upstream') return DIAGNOSIS_TYPES.career_up;
+        if (concern === 'salary') return DIAGNOSIS_TYPES.skill_value;
+        if (concern === 'skill') return DIAGNOSIS_TYPES.career_up; // 専門性=より大きな案件へ
+        if (concern === 'culture') return DIAGNOSIS_TYPES.environment;
+        if (concern === 'options') return DIAGNOSIS_TYPES.growth;
+      }
+
+      // セールス / プリセールス - 技術深掘りより上流・年収志向
+      if (position === 'sales') {
+        if (concern === 'salary') return DIAGNOSIS_TYPES.skill_value;
+        if (concern === 'upstream') return DIAGNOSIS_TYPES.career_up;
+        if (concern === 'skill') return DIAGNOSIS_TYPES.career_up; // スキル=より上流へ
+        if (concern === 'culture') return DIAGNOSIS_TYPES.environment;
+        if (concern === 'options') return DIAGNOSIS_TYPES.growth;
+      }
+
+      // コーポレート / その他 - IT転身の文脈
+      if (position === 'corporate') {
+        if (concern === 'options') return DIAGNOSIS_TYPES.career_change;
+        if (concern === 'culture') return DIAGNOSIS_TYPES.environment;
+        if (concern === 'salary') return DIAGNOSIS_TYPES.career_change; // 年収UP=IT転身
+        if (concern === 'upstream') return DIAGNOSIS_TYPES.career_change; // 上流=IT転身
+        if (concern === 'skill') return DIAGNOSIS_TYPES.career_change; // スキル=IT転身
+      }
+
+      // フォールバック
+      return DIAGNOSIS_TYPES.growth;
+    }
+
+    // ============================================
+    // APP STATE & LOGIC
+    // ============================================
+    const AppState = {
+      currentQuestionId: 'q1',
+      answers: {},
+      isTransitioning: false
+    };
+
+    const DOM = {};
+
+    function initApp() {
+      DOM.questionScreen = document.getElementById('question-screen');
+      DOM.resultScreen = document.getElementById('result-screen');
+      DOM.progressFill = document.getElementById('progress-fill');
+      DOM.progressText = document.getElementById('progress-text');
+      DOM.questionText = document.getElementById('question-text');
+      DOM.questionSubtext = document.getElementById('question-subtext');
+      DOM.optionsContainer = document.getElementById('options-container');
+      DOM.microCopy = document.getElementById('micro-copy');
+      DOM.resultType = document.getElementById('result-type');
+      DOM.resultTagline = document.getElementById('result-tagline');
+      DOM.marketPosition = document.getElementById('market-position');
+      DOM.resultDescription = document.getElementById('result-description');
+      DOM.strengthTags = document.getElementById('strength-tags');
+      DOM.nextStepText = document.getElementById('next-step-text');
+      DOM.lineButton = document.getElementById('line-button');
+
+      DOM.lineButton.addEventListener('click', handleLineClick);
+
+      renderQuestion('q1');
+    }
+
+    function renderQuestion(questionId) {
+      const question = SCENARIO[questionId];
+      if (!question) return;
+
+      const normalizedId = questionId === 'q3_alt' ? 'q3' : questionId;
+      const index = QUESTION_ORDER.indexOf(normalizedId);
+      const progress = Math.round((index / TOTAL_QUESTIONS) * 100);
+
+      DOM.progressFill.style.width = progress + '%';
+      DOM.progressText.textContent = (index + 1) + ' / ' + TOTAL_QUESTIONS;
+
+      DOM.questionText.innerHTML = question.question;
+
+      if (question.subtext) {
+        DOM.questionSubtext.textContent = question.subtext;
+        DOM.questionSubtext.style.display = 'block';
+      } else {
+        DOM.questionSubtext.style.display = 'none';
+      }
+
+      DOM.microCopy.classList.remove('visible');
+      DOM.optionsContainer.innerHTML = '';
+
+      question.options.forEach(function(option) {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        if (option.primary) button.classList.add('primary');
+        button.textContent = option.label;
+
+        button.addEventListener('click', function() {
+          handleOptionClick(option.value, questionId);
+        });
+
+        DOM.optionsContainer.appendChild(button);
+      });
+    }
+
+    async function handleOptionClick(value, questionId) {
+      if (AppState.isTransitioning) return;
+
+      const question = SCENARIO[questionId];
+      if (!question) return;
+
+      // Q1クリック時にセッション開始
+      if (questionId === 'q1') {
+        await startSession();
+      }
+
+      if (question.type) {
+        AppState.answers[question.type] = value;
+      }
+
+      // 回答をSupabaseに保存
+      lastQuestionId = questionId;
+      const saveData = { last_question: questionId };
+      if (question.type && question.type !== 'entry') {
+        saveData[question.type] = value;
+      }
+      saveToSupabase(saveData);
+
+      if (question.microCopy) {
+        DOM.microCopy.textContent = question.microCopy;
+        DOM.microCopy.classList.add('visible');
+      }
+
+      let nextId;
+      if (typeof question.next === 'function') {
+        nextId = question.next(value);
+      } else {
+        nextId = question.next;
+      }
+
+      AppState.isTransitioning = true;
+      setTimeout(function() {
+        if (nextId === 'result') {
+          showResult();
+        } else {
+          AppState.currentQuestionId = nextId;
+          renderQuestion(nextId);
+        }
+        AppState.isTransitioning = false;
+      }, question.microCopy ? 800 : 300);
+    }
+
+    function showResult() {
+      const result = getDiagnosisType(AppState.answers);
+
+      // 診断結果をSupabaseに保存
+      const diagnosisKey = Object.keys(DIAGNOSIS_TYPES).find(
+        key => DIAGNOSIS_TYPES[key] === result
+      );
+      saveToSupabase({
+        diagnosis_type: diagnosisKey,
+        completed: true,
+        last_question: 'result'
+      });
+
+      DOM.resultType.textContent = result.name;
+      DOM.resultTagline.textContent = result.tagline;
+      DOM.marketPosition.textContent = result.marketPosition;
+      DOM.resultDescription.textContent = result.description;
+      DOM.nextStepText.textContent = result.nextStep;
+
+      // Render strength tags
+      DOM.strengthTags.innerHTML = '';
+      result.strengths.forEach(function(strength) {
+        const tag = document.createElement('span');
+        tag.className = 'strength-tag';
+        tag.textContent = strength;
+        DOM.strengthTags.appendChild(tag);
+      });
+
+      DOM.progressFill.style.width = '100%';
+      DOM.progressText.textContent = '完了';
+
+      DOM.questionScreen.classList.add('hidden');
+      DOM.resultScreen.classList.remove('hidden');
+    }
+
+    function handleLineClick() {
+      // LINEクリックをSupabaseに記録
+      saveToSupabase({ line_clicked: true });
+
+      // TODO: 実際のLINE URLに置き換え
+      alert('LINE公式アカウントへ遷移します（仮実装）\n\n実際の運用時はここにLINE URLを設定します。');
+      // window.location.href = 'https://line.me/R/ti/p/@xxxxx';
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+
+</body>
+</html>
