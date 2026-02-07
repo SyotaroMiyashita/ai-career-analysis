@@ -482,7 +482,7 @@
 
     <!-- Question Screen -->
     <div id="question-screen" class="screen">
-      <div class="progress-container">
+      <div class="progress-container" id="progress-container">
         <div class="progress-info">
           <span class="progress-text" id="progress-text">1 / 5</span>
         </div>
@@ -901,6 +901,7 @@
       DOM.questionScreen = document.getElementById('question-screen');
       DOM.analyzingScreen = document.getElementById('analyzing-screen');
       DOM.resultScreen = document.getElementById('result-screen');
+      DOM.progressContainer = document.getElementById('progress-container');
       DOM.progressFill = document.getElementById('progress-fill');
       DOM.progressText = document.getElementById('progress-text');
       DOM.questionText = document.getElementById('question-text');
@@ -928,10 +929,19 @@
 
       const normalizedId = questionId === 'q3_alt' ? 'q3' : questionId;
       const index = QUESTION_ORDER.indexOf(normalizedId);
-      const progress = Math.round((index / TOTAL_QUESTIONS) * 100);
 
-      DOM.progressFill.style.width = progress + '%';
-      DOM.progressText.textContent = (index + 1) + ' / ' + TOTAL_QUESTIONS;
+      // Q1はエントリー画面なのでプログレスバーを非表示
+      if (questionId === 'q1') {
+        DOM.progressContainer.style.display = 'none';
+      } else {
+        DOM.progressContainer.style.display = '';
+        // Q2以降: 1/4 → 2/4 → 3/4 → 4/4 で表示（Q1を除いた4問換算）
+        var stepNum = index;  // Q2=1, Q3=2, Q4=3, Q5=4
+        var totalSteps = TOTAL_QUESTIONS - 1;  // 4
+        var progress = Math.round((stepNum / totalSteps) * 100);
+        DOM.progressFill.style.width = progress + '%';
+        DOM.progressText.textContent = stepNum + ' / ' + totalSteps;
+      }
 
       DOM.questionText.innerHTML = question.question;
 
@@ -1058,10 +1068,9 @@
       }, 2000);
     }
 
-    async function handleLineClick() {
-      // LINEクリックをSupabaseに記録（保存完了を待ってから遷移）
-      await saveToSupabase({ line_clicked: true });
-
+    function handleLineClick() {
+      // LINEクリックをSupabaseに記録（fire-and-forget: 遷移をブロックしない）
+      saveToSupabase({ line_clicked: true });
       window.location.href = 'https://lin.ee/0zcZZyg';
     }
 
