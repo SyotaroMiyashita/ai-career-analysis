@@ -863,6 +863,11 @@
         button.textContent = option.label;
 
         button.addEventListener('click', function() {
+          // 全ボタンのselectedを外して、押したボタンにselectedをつける
+          DOM.optionsContainer.querySelectorAll('.option-button').forEach(function(b) {
+            b.classList.remove('selected');
+          });
+          button.classList.add('selected');
           handleOptionClick(option.value, questionId);
         });
 
