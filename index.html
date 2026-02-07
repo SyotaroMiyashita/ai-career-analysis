@@ -511,7 +511,6 @@
     // ============================================
     // SUPABASE CONFIGURATION
     // ============================================
-    // TODO: 以下の値をSupabaseダッシュボードから取得して設定
     const SUPABASE_URL = 'https://llgjjmoepjomjsjqhrij.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsZ2pqbW9lcGpvbWpzanFocmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNzQ5NjUsImV4cCI6MjA4NTk1MDk2NX0.hDSDVwysxjp3lvLbyV6rzGZhU-divNoFBTh16JCrHr8';
 
@@ -591,15 +590,14 @@
     window.addEventListener('beforeunload', function() {
       if (sessionId && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
         const duration = sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : null;
-        const data = JSON.stringify({
+        const payload = JSON.stringify({
           id: sessionId,
           last_question: lastQuestionId,
           session_duration: duration
         });
-        navigator.sendBeacon(
-          `${SUPABASE_URL}/rest/v1/scenario_chatbot?on_conflict=id`,
-          new Blob([data], { type: 'application/json' })
-        );
+        // sendBeaconはヘッダー設定不可のため、APIキーをクエリパラメータで渡す
+        const url = `${SUPABASE_URL}/rest/v1/scenario_chatbot?on_conflict=id&apikey=${SUPABASE_ANON_KEY}`;
+        navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
       }
     });
 
