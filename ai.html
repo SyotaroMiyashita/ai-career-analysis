@@ -115,10 +115,11 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 0.75rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       color: #FFF;
       font-family: var(--font-serif);
+      letter-spacing: 0.02em;
     }
 
     .xai-content {
@@ -781,7 +782,7 @@
     const SCENARIO = {
       q1: {
         id: 'q1', type: 'entry',
-        message: 'はじめまして、Xai（カイ）です。IT業界専門のキャリアアドバイザーをしています。<br><br>いくつか質問に答えてもらうだけで、あなたの市場価値とキャリアタイプを診断できます。所要時間は2分ほどです。',
+        message: 'こんにちは、Xai（カイ）です。IT・コンサル領域で年間1,500名以上のキャリア相談に乗ってきました。<br><br>2分ほどの質問に答えてもらえれば、あなたのキャリアタイプと"次の一手"を診断します。',
         options: [{ value: 'start', label: '診断をはじめる', primary: true }],
         next: 'q2'
       },
@@ -1024,10 +1025,10 @@
       if (type === 'empathy') {
         // Reject if contains any question mark (not just at end)
         if (text.includes('？') || text.includes('?')) return false;
-        if (text.length > 150) return false;
+        if (text.length > 250) return false;
       }
       if (type === 'diagnosis') {
-        if (text.length > 400) return false;
+        if (text.length > 600) return false;
       }
       return true;
     }
@@ -1133,7 +1134,7 @@
       ];
 
       addTypingIndicator();
-      var aiResponse = await callAIWithRetry(messages, systemPrompt, 100);
+      var aiResponse = await callAIWithRetry(messages, systemPrompt, 200);
       removeTypingIndicator();
 
       if (aiResponse && validateAIResponse(aiResponse, 'empathy')) {
@@ -1207,7 +1208,7 @@
       ];
 
       addTypingIndicator();
-      var aiResponse = await callAIWithRetry(messages, systemPrompt, 100);
+      var aiResponse = await callAIWithRetry(messages, systemPrompt, 200);
       removeTypingIndicator();
 
       if (aiResponse && validateAIResponse(aiResponse, 'empathy')) {
@@ -1276,7 +1277,7 @@
 
       var aiMessages = [{ role: 'user', content: '診断結果の説明をお願いします。' }];
 
-      personalizedDescription = await callAIWithRetry(aiMessages, diagSystemPrompt, 300);
+      personalizedDescription = await callAIWithRetry(aiMessages, diagSystemPrompt, 500);
       if (!validateAIResponse(personalizedDescription, 'diagnosis')) {
         personalizedDescription = null; // Use static fallback
       }
@@ -1319,7 +1320,7 @@
 
       // CTA
       await new Promise(function(resolve) { setTimeout(resolve, 600); });
-      await delayedXaiBubble('この診断結果をもとに、あなたに合った求人をLINEでご紹介できます。初年度年収100万円UPの実績もありますよ。', 600);
+      await delayedXaiBubble('この診断結果をもとに、1,000社を超える企業からあなたに合った求人をご紹介します。<br><br>私たちは、初年度年収100万円UPを確約します。', 600);
 
       const ctaSection = document.createElement('div');
       ctaSection.className = 'cta-section-chat';
